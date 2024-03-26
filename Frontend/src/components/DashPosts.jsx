@@ -17,7 +17,7 @@ function DashPosts() {
                   throw new Error('Access token not found');
               }
   
-              const res = await fetch(`http://localhost:8000/api/v1/blogs/getposts?userId=${currentUser.data.user.author}`, {
+              const res = await fetch(`http://localhost:8000/api/v1/blogs/`, {
                   method: 'GET',
                   headers: {
                       'Content-Type': 'application/json',
@@ -30,7 +30,9 @@ function DashPosts() {
               if (res.ok) {
                 setUserPosts(responseData.posts);
                   console.log("Response Data:", responseData); 
-                  const filteredPosts = responseData.data.blogs.filter(post => post.author === currentUser.data.user._id);
+                  const userUsername = currentUser.data.user.username;
+                  const filteredPosts = responseData.data.blogs.filter(post => post.author === userUsername);
+                console.log(filteredPosts);
                   console.log("Hello",currentUser.data.user.author)
                   setUserPosts(filteredPosts);
                  
