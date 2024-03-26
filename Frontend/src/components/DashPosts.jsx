@@ -1,11 +1,12 @@
 import React,{useEffect,useState} from 'react'
 import {useSelector} from 'react-redux'
+import { Modal, Table, Button } from 'flowbite-react';
 
 function DashPosts() {
     const {currentUser} = useSelector((state) => state.user)
     console.log("currentUser :",currentUser);
     const [userPosts,setUserPosts] = useState([])
-    console.log(userPosts);
+
     useEffect(() => {
       const getAccessToken = async () => {
           try {
@@ -50,9 +51,52 @@ function DashPosts() {
       }
   }, [currentUser.data.user._id]);
   
-  
+  console.log("userPosts",userPosts);
   return (
-    <div>DashPosts</div>
+    <div>
+        {currentUser.data.user.isAdmin && userPosts.length > 0 ? (
+            <>
+            <Table hoverable className='shadow-md'>
+                <Table.Head>
+                <Table.HeadCell>Date updated</Table.HeadCell>
+              <Table.HeadCell>Post image</Table.HeadCell>
+              <Table.HeadCell>Post title</Table.HeadCell>
+              <Table.HeadCell>Category</Table.HeadCell>
+              <Table.HeadCell>Delete</Table.HeadCell>
+              <Table.HeadCell>
+              <span>Edit</span>
+              </Table.HeadCell>
+                </Table.Head>
+                {userPosts.map((post) => (
+                    <Table.Body 
+                    key={post._id}
+                    className='divide-y'>
+                    <Table.Row className='bg-white dark:border-gray-700 dark:bg-gray-800'>
+                        <Table.Cell>
+                        {new Date(post.updatedAt).toLocaleDateString()}
+                        </Table.Cell>
+                        <Table.Cell>
+                      <img
+                        src={post.thumbnail}
+                        alt={post.title}
+                        className='w-20 h-10 object-cover bg-gray-500'
+                      />
+                  </Table.Cell>
+                  <Table.Cell>
+                      {post.title}
+                  </Table.Cell>
+                  <Table.Cell>{post.category}</Table.Cell>
+                    </Table.Row>
+                    </Table.Body>
+                ))
+
+                }
+            </Table>
+            </>
+        ):(
+            <p>You have no posts yet!</p>
+        )}
+    </div>
   )
 }
 
