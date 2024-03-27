@@ -1,11 +1,13 @@
 import React,{useEffect,useState} from 'react'
 import {useSelector} from 'react-redux'
 import { Modal, Table, Button } from 'flowbite-react';
+import { Link } from 'react-router-dom';
 
 function DashPosts() {
     const {currentUser} = useSelector((state) => state.user)
     console.log("currentUser :",currentUser);
     const [userPosts,setUserPosts] = useState([])
+    const [showMore, setShowMore] = useState(true);
 
     useEffect(() => {
       const getAccessToken = async () => {
@@ -31,11 +33,15 @@ function DashPosts() {
               if (res.ok) {
                 setUserPosts(responseData.posts);
                   console.log("Response Data:", responseData); 
+                  
                   const userUsername = currentUser.data.user.username;
                   const filteredPosts = responseData.data.blogs.filter(post => post.author === userUsername);
                 console.log(filteredPosts);
                   console.log("Hello",currentUser.data.user.author)
                   setUserPosts(filteredPosts);
+                  if (responseData.data.blogs.length < 9) {
+                    setShowMore(false);
+                  }
                  
               } else {
                   throw new Error('Failed to fetch data');
@@ -52,8 +58,45 @@ function DashPosts() {
   }, [currentUser.data.user._id]);
   
   console.log("userPosts",userPosts);
+
+  const handleShowMore = async () => {
+
+    const startIndex = userPosts.length;
+    try {
+        const persistedStateString = localStorage.getItem('persist:root');
+        const persistedState = JSON.parse(persistedStateString);
+        const accessToken = JSON.parse(persistedState.user)?.currentUser?.data?.accessToken;
+
+        if (!accessToken) {
+            throw new Error('Access token not found');
+        }
+
+      const res = await fetch(
+        `http://localhost:8000/api/v1/blogs/?startIndex=${startIndex}`,
+        {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${accessToken}`
+            }
+        }
+      );
+      const data = await res.json();
+      console.log('xcghjkl',data);
+    //   if (res.ok) {
+    //     setUserPosts((prev) => [...prev, ...data.posts]);
+    //   if (data.posts.length < 9) {
+    //     setShowMore(false);
+    //     }
+    //   }
+    } catch (error) {
+      console.log(error.message);
+    }
+  };
+
+
   return (
-    <div>
+    <div className='table-auto overflow-x-scroll md:mx-auto p-3 scrollbar scrollbar-track-slate-100 scrollbar-thumb-slate-300 dark:scrollbar-track-slate-700 dark:scrollbar-thumb-slate-500'>
         {currentUser.data.user.isAdmin && userPosts.length > 0 ? (
             <>
             <Table hoverable className='shadow-md'>
@@ -86,12 +129,32 @@ function DashPosts() {
                       {post.title}
                   </Table.Cell>
                   <Table.Cell>{post.category}</Table.Cell>
+                  <Table.Cell>
+                   <span className='font-medium text-red-500 hover:underline cursor-pointer'>
+                    Delete
+                    </span>   
+                 </Table.Cell>
+                 <Table.Cell>
+                    <Link className='text-teal-500' to={`/update-post/${post._id}`}>
+                    <span>
+                    Edit
+                    </span>  
+                    </Link>  
+                 </Table.Cell>
                     </Table.Row>
                     </Table.Body>
                 ))
 
                 }
             </Table>
+            {showMore && (
+            <button
+              onClick={handleShowMore}
+              className='w-full text-teal-500 self-center text-sm py-7'
+            >
+              Show more
+            </button>
+          )}
             </>
         ):(
             <p>You have no posts yet!</p>
