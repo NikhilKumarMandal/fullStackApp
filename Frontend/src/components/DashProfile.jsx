@@ -8,9 +8,63 @@ import { Link } from 'react-router-dom';
 
 export default function DashProfile() {
   const { currentUser, error, loading } = useSelector((state) => state.user);
+  console.log("CurrentUser :", currentUser);
+  const [imageFile, setImageFile] = useState(null);
+  const [imageFileUrl, setImageFileUrl] = useState(null);
+  const [imageFileUploadProgress, setImageFileUploadProgress] = useState(null)
+  const filePickerRef = useRef();
+
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setImageFile(file);
+      setImageFileUrl(URL.createObjectURL(file));
+    }
+  };
+  
+  useEffect(() => {
+    if (imageFile) {
+      uploadImage();
+    }
+  }, [imageFile]);
+
+  const uploadImage = async () => {
+    const formData = new FormData();
+    formData.append('avatar', imageFile); 
+  try {
+    const response = await fetch('http://localhost:8000/api/v1/users/avatar', {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+      },
+      body: formData,
+    });
+
+    const data = await response.json();
+    console.log("DATA : ",data);
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to upload image');
+    }
+
+    console.log('Upload successful', data);
+  } catch (error) {
+    console.error('Upload failed:', error.message);
+  }
+  }
+
+  console.log(imageFile,imageFileUrl);
+
  
   const dispatch = useDispatch();
  
+        const persistedStateString = localStorage.getItem('persist:root');
+          const persistedState = JSON.parse(persistedStateString);
+          const accessToken = JSON.parse(persistedState.user)?.currentUser?.data?.accessToken;
+  
+          if (!accessToken) {
+            throw new Error('Access token not found');
+          }
 
   
   const handleChange = (e) => {
@@ -19,8 +73,12 @@ export default function DashProfile() {
 
   const handleSignout = async () => {
     try {
-      const res = await fetch('/api/v1/user/logout', {
+      const res = await fetch('http://localhost:8000/api/v1/users/logout', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`
+      }
       });
       const data = await res.json();
       if (!res.ok) {
@@ -41,20 +99,22 @@ export default function DashProfile() {
         <input
           type='file'
           accept='image/*'
-
-
+          onChange={handleImageChange}
+          ref={filePickerRef}
           hidden
         />
         <div
           className='relative w-32 h-32 self-center cursor-pointer shadow-md overflow-hidden rounded-full'
-
+          onClick={() => filePickerRef.current.click()}
+          
         >
       
           <img
-
+            src={ currentUser.data.user.avatar}
             alt='user'
             className={`rounded-full w-full h-full object-cover border-8 border-[lightgray] ${
-
+              imageFileUploadProgress &&
+              imageFileUploadProgress < 100 &&
               'opacity-60'
             }`}
           />
@@ -86,7 +146,7 @@ export default function DashProfile() {
         >
           
         </Button>
-        {currentUser.data.user.isAdmin && (
+        {imageFileUrl || currentUser.data.user.isAdmin && (
           <Link to={'/CreatePost'}>
             <Button
               type='button'
