@@ -35,13 +35,13 @@ export default function Header() {
       <div className='flex gap-2 md:order-2'>
         {currentUser ? (
           <Dropdown arrowIcon={false} inline label={
-          <Avatar alt='user' img={currentUser.data.user.avatar} rounded />
+          <Avatar alt='user' img={currentUser?.data?.user?.avatar} rounded />
           }>
 
             <Dropdown.Header>
-              <span className='block text-sm'>@{currentUser.data.user.username}</span>
-              <span className='block text-sm font-medium truncate'>{currentUser.data.user.fullname}</span>
-              <span className='block text-sm font-medium truncate'>{currentUser.data.user.email}</span>
+              <span className='block text-sm'>@{currentUser?.data?.user?.username}</span>
+              <span className='block text-sm font-medium truncate'>{currentUser?.data?.user?.fullname}</span>
+              <span className='block text-sm font-medium truncate'>{currentUser?.data?.user?.email}</span>
             </Dropdown.Header>
             <Link to={'/dashboard?tab=profile'}>
               <Dropdown.Item>Profile</Dropdown.Item>
