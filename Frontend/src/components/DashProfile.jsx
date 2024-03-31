@@ -60,29 +60,37 @@ export default function DashProfile() {
     uploadTask.on(
       'state_changed',
       (snapshot) => {
-        const progress =
-          (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-
+        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
         setImageFileUploadProgress(progress.toFixed(0));
       },
       (error) => {
-        setImageFileUploadError(
-          'Could not upload image (File must be less than 2MB)'
-        );
+        setImageFileUploadError('Could not upload image: ' + error.message);
         setImageFileUploadProgress(null);
         setImageFile(null);
         setImageFileUrl(null);
         setImageFileUploading(false);
       },
       () => {
-        getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
-          setImageFileUrl(downloadURL);
-          setFormData({ ...formData, profilePicture: downloadURL });
-          setImageFileUploading(false);
-        });
+        getDownloadURL(uploadTask.snapshot.ref)
+          .then((downloadURL) => {
+            setImageFileUrl(downloadURL);
+            setFormData({ ...formData, avatar: downloadURL });
+            setImageFileUploading(false);
+          })
+          .catch((error) => {
+            setImageFileUploadError('Error getting download URL: ' + error.message);
+            setImageFileUploadProgress(null);
+            setImageFile(null);
+            setImageFileUrl(null);
+            setImageFileUploading(false);
+          });
       }
     );
+    
   };
+
+  console.log('Image URL:', imageFileUrl);
+
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.id]: e.target.value });
@@ -101,12 +109,21 @@ export default function DashProfile() {
       return;
     }
     try {
+      const persistedStateString = localStorage.getItem('persist:root');
+      const persistedState = JSON.parse(persistedStateString);
+      const accessToken = JSON.parse(persistedState.user)?.currentUser?.data?.accessToken;
+  
+      if (!accessToken) {
+      throw new Error('Access token not found');
+      }
+
       dispatch(updateStart());
-      const res = await fetch(`/api/user/update/${currentUser._id}`, {
-        method: 'PUT',
+      const res = await fetch(`http://localhost:8000/api/v1/users/update-account`, {
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-        },
+          'Authorization': `Bearer ${accessToken}`
+      },
         body: JSON.stringify(formData),
       });
       const data = await res.json();
@@ -122,28 +139,22 @@ export default function DashProfile() {
       setUpdateUserError(error.message);
     }
   };
-  const handleDeleteUser = async () => {
-    setShowModal(false);
-    try {
-      dispatch(deleteUserStart());
-      const res = await fetch(`/api/user/delete/${currentUser._id}`, {
-        method: 'DELETE',
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        dispatch(deleteUserFailure(data.message));
-      } else {
-        dispatch(deleteUserSuccess(data));
-      }
-    } catch (error) {
-      dispatch(deleteUserFailure(error.message));
-    }
-  };
-
+  
   const handleSignout = async () => {
     try {
-      const res = await fetch('/api/user/signout', {
+      const persistedStateString = localStorage.getItem('persist:root');
+      const persistedState = JSON.parse(persistedStateString);
+      const accessToken = JSON.parse(persistedState.user)?.currentUser?.data?.accessToken;
+  
+      if (!accessToken) {
+      throw new Error('Access token not found');
+      }
+      const res = await fetch('http://localhost:8000/api/v1/users/logout', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`
+      }
       });
       const data = await res.json();
       if (!res.ok) {
@@ -206,9 +217,9 @@ export default function DashProfile() {
         )}
         <TextInput
           type='text'
-          id='username'
-          placeholder='username'
-          defaultValue={currentUser?.data?.user?.username}
+          id='fullname'
+          placeholder='fullname'
+          defaultValue={currentUser?.data?.user?.fullname}
           onChange={handleChange}
         />
         <TextInput
@@ -244,10 +255,7 @@ export default function DashProfile() {
           </Link>
         )}
       </form>
-      <div className='text-red-500 flex justify-between mt-5'>
-        <span onClick={() => setShowModal(true)} className='cursor-pointer'>
-          Delete Account
-        </span>
+      <div className='text-red-500 flex justify-center mt-5'>
         <span onClick={handleSignout} className='cursor-pointer'>
           Sign Out
         </span>
@@ -274,22 +282,7 @@ export default function DashProfile() {
         size='md'
       >
         <Modal.Header />
-        <Modal.Body>
-          <div className='text-center'>
-            <HiOutlineExclamationCircle className='h-14 w-14 text-gray-400 dark:text-gray-200 mb-4 mx-auto' />
-            <h3 className='mb-5 text-lg text-gray-500 dark:text-gray-400'>
-              Are you sure you want to delete your account?
-            </h3>
-            <div className='flex justify-center gap-4'>
-              <Button color='failure' onClick={handleDeleteUser}>
-                Yes, I'm sure
-              </Button>
-              <Button color='gray' onClick={() => setShowModal(false)}>
-                No, cancel
-              </Button>
-            </div>
-          </div>
-        </Modal.Body>
+       
       </Modal>
     </div>
   );
