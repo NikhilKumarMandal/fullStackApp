@@ -9,7 +9,7 @@ function CreatePost() {
 
   const [formData, setFormData] = useState({
     title: '',
-    category: 'uncategorized',
+    category: '',
     thumbnail: null,
     content: ''
   });

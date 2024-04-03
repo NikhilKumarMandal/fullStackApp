@@ -14,6 +14,8 @@ import Dashboard from './pages/Dashboard.jsx'
 import PrivateRoute from './components/PrivateRoute.jsx'
 import OnlyAdminPrivateRoute from './components/OnlyAdminPrivateRoute.jsx'
 import CreatePost from './pages/CreatePost.jsx'
+import UpdateAvatar from './pages/UpdateAvatar.jsx'
+
 
 
 const router = createBrowserRouter(
@@ -28,6 +30,7 @@ const router = createBrowserRouter(
     <Route element={<OnlyAdminPrivateRoute/>}>
     <Route path='/createPost' element={<CreatePost/>} />
     </Route>
+    <Route path='/updateAvatar' element={<UpdateAvatar/>} />
     
     </Route>
   )

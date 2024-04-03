@@ -230,10 +230,14 @@ const getCurrentUser = asyncHandler(async(req,res) => {
 const updateAccountDetails = asyncHandler(async(req,res) => {
 
     const {fullname, email} = req.body
-    console.log(fullname);
 
-    if (!fullname && !email) {
-        throw new ApiError(400, "fullname or email is required")
+    console.log(fullname);
+    const avatarLocalPath = req.file?.path
+ 
+    const avatar = await uploadOnCloudinary(avatarLocalPath)
+
+    if (!fullname && !email && !avatar) {
+        throw new ApiError(400, "at least one field is required")
     }
 
     const user = await User.findByIdAndUpdate(
@@ -241,12 +245,18 @@ const updateAccountDetails = asyncHandler(async(req,res) => {
         {
             $set: {
                 fullname,
-                email
+                email,
+                avatar: avatar?.url
             }
         },
-        {new: true}
-        
+        {
+            new: true
+        } 
     ).select("-password")
+
+    if (!user) {
+        throw new ApiError(404, "User not found");
+    }
 
     return res
     .status(200)
